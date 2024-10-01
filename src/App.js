@@ -5,20 +5,45 @@ const IATTest = () => {
   const [stimulus, setStimulus] = useState(null);
   const [trial, setTrial] = useState(0);
   const [reactionTimes, setReactionTimes] = useState([]);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [level, setLevel] = useState(1); // Track the current level
+  const [showInstructions, setShowInstructions] = useState(true); // Instructions for each level
+  const [showReadyScreen, setShowReadyScreen] = useState(false); // Ready screen between levels
   const [timer, setTimer] = useState(null);
   const [timeLeft, setTimeLeft] = useState(3); // Timer state for 3 seconds
 
-  const stimuli = [
+  // Level 1: Science vs Liberal Arts
+  const level1Stimuli = [
+    { word: 'Anthropology', category: 'Liberal Arts' },
+    { word: 'Astrophysics', category: 'Science' },
+    { word: 'Philosophy', category: 'Liberal Arts' },
+    { word: 'Biology', category: 'Science' },
+  ];
+
+  // Level 2: Male vs Female
+  const level2Stimuli = [
+    { word: 'Dad', category: 'Male' },
+    { word: 'Mom', category: 'Female' },
+    { word: 'Brother', category: 'Male' },
+    { word: 'Sister', category: 'Female' },
+  ];
+
+  // Level 3: Combined Male/Female + Science/Liberal Arts
+  const level3Stimuli = [
     { word: 'Anthropology', category: 'Liberal Arts' },
     { word: 'Astrophysics', category: 'Science' },
     { word: 'Dad', category: 'Male' },
     { word: 'Mom', category: 'Female' },
   ];
 
+  // Conditionally set stimuli based on the current level
+  let currentStimuli = [];
+  if (level === 1) currentStimuli = level1Stimuli;
+  if (level === 2) currentStimuli = level2Stimuli;
+  if (level === 3) currentStimuli = level3Stimuli;
+
   useEffect(() => {
-    if (trial < stimuli.length) {
-      setStimulus(stimuli[trial]);
+    if (trial < currentStimuli.length) {
+      setStimulus(currentStimuli[trial]);
       setTimeLeft(3); // Reset timer for each trial
       setTimer(setTimeout(() => {
         handleNextTrial(); // Automatically move to the next trial
@@ -39,24 +64,43 @@ const IATTest = () => {
         clearInterval(countdown);
       };
     }
-  }, [trial]);
+  }, [trial, level]);
 
   const handleNextTrial = () => {
     clearTimeout(timer);
-    setTrial(trial + 1); // Move to the next trial
+    if (trial + 1 < currentStimuli.length) {
+      setTrial(trial + 1); // Move to the next trial within the same level
+    } else {
+      // Move to the next level if trials for the current level are finished
+      if (level < 3) {
+        setShowReadyScreen(true); // Show "Get Ready" screen between levels
+      } else{
+        setLevel(level + 1);
+      }
+    }
   };
 
   const handleResponse = (e) => {
-    if (!stimulus || trial >= stimuli.length) return;
+    if (!stimulus || trial >= currentStimuli.length) return;
 
     const keyPressed = e.key.toLowerCase();
     const startTime = performance.now();
     const endTime = performance.now();
     const reactionTime = endTime - startTime;
 
-    const expectedKey = stimulus.category === 'Liberal Arts' || stimulus.category === 'Male' ? 'e' : 'i';
-    const correct = keyPressed === expectedKey;
+    let expectedKey;
+    if (level === 1) {
+      // Level 1: Liberal Arts ('e') vs Science ('i')
+      expectedKey = stimulus.category === 'Liberal Arts' ? 'e' : 'i';
+    } else if (level === 2) {
+      // Level 2: Male ('e') vs Female ('i')
+      expectedKey = stimulus.category === 'Male' ? 'e' : 'i';
+    } else if (level === 3) {
+      // Level 3: Combined task
+      expectedKey = stimulus.category === 'Liberal Arts' || stimulus.category === 'Male' ? 'e' : 'i';
+    }
 
+    const correct = keyPressed === expectedKey;
     setReactionTimes([...reactionTimes, { reactionTime, correct }]);
     handleNextTrial(); // Move to the next trial
   };
@@ -68,8 +112,14 @@ const IATTest = () => {
     };
   }, [trial, stimulus]);
 
-  // Once all stimuli are completed, display results
-  if (trial >= stimuli.length) {
+  const startNextLevel = () => {
+    setLevel(level + 1);
+    setTrial(0); // Reset trials for the new level
+    setShowReadyScreen(false); // Hide the ready screen
+  };
+
+  // Final results after all levels
+  if (level > 3) {
     const correctResponses = reactionTimes.filter(rt => rt.correct).length;
     const avgReactionTime = (
       reactionTimes.reduce((acc, curr) => acc + curr.reactionTime, 0) / reactionTimes.length
@@ -78,22 +128,37 @@ const IATTest = () => {
     return (
       <div className="IAT-container">
         <h2>Test Completed</h2>
-        <p>Total Trials: {stimuli.length}</p>
+        <p>Total Trials: {reactionTimes.length}</p>
         <p>Correct Responses: {correctResponses}</p>
         <p>Average Reaction Time: {avgReactionTime} ms</p>
       </div>
     );
   }
 
-  // Show instructions if the state is true
+  // Ready screen between levels
+  if (showReadyScreen) {
+    let nextTask;
+    if (level === 1) nextTask = 'Male vs Female categories';
+    if (level === 2) nextTask = 'Combined Male/Female with Science/Liberal Arts';
+
+    return (
+      <div className="IAT-container">
+        <h2>Get Ready for the Next Level</h2>
+        <p>In the next level, you will sort <strong>{nextTask}</strong>.</p>
+        <button onClick={startNextLevel}>Start Next Level</button>
+      </div>
+    );
+  }
+
+  // Initial instructions for the first level
   if (showInstructions) {
     return (
       <div className="IAT-container">
         <h2>How to Play</h2>
         <p>In this test, you will see words appear on the screen.</p>
-        <p>Press "E" for words related to the left category and "I" for words related to the right category.</p>
-        <p>Make sure to respond as quickly and accurately as possible!</p>
-        <p>If you make a mistake, a red "X" will appear. Press the other key to continue.</p>
+        <p>In Level 1, you will sort Science and Liberal Arts words.</p>
+        <p>In Level 2, you will sort Male and Female categories.</p>
+        <p>In Level 3, you will sort combined categories.</p>
         <button onClick={() => setShowInstructions(false)}>Start Test</button>
       </div>
     );
@@ -119,8 +184,22 @@ const IATTest = () => {
       <div className="categories-stimulus-row">
         {/* Left categories */}
         <div className="category-left">
-          <h2>Male</h2>
-          <h3>Liberal Arts</h3>
+          {level === 1 && (
+            <>
+              <h2>Liberal Arts</h2>
+            </>
+          )}
+          {level === 2 && (
+            <>
+              <h2>Male</h2>
+            </>
+          )}
+          {level === 3 && (
+            <>
+              <h2>Male</h2>
+              <h3>Liberal Arts</h3>
+            </>
+          )}
         </div>
 
         {/* Central stimulus */}
@@ -130,8 +209,22 @@ const IATTest = () => {
 
         {/* Right categories */}
         <div className="category-right">
-          <h2>Female</h2>
-          <h3>Science</h3>
+          {level === 1 && (
+            <>
+              <h2>Science</h2>
+            </>
+          )}
+          {level === 2 && (
+            <>
+              <h2>Female</h2>
+            </>
+          )}
+          {level === 3 && (
+            <>
+              <h2>Female</h2>
+              <h3>Science</h3>
+            </>
+          )}
         </div>
       </div>
 
