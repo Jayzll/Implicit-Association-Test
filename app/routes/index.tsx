@@ -194,6 +194,7 @@ const IATTest = () => {
 	const startNextLevel = () => {
 		setLevel(level + 1);
 		setTrial(0); // Reset trials for the new level
+		setTimeLeft(3);
 		setShowReadyScreen(false); // Hide the ready screen
 	};
 
