@@ -2,6 +2,7 @@ import * as React from "react";
 import type { MetaFunction } from "react-router";
 
 import "./index.css";
+import { useInterval } from "~/utils";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -69,14 +70,12 @@ const shuffleArray = (array: Stimulus[]) => {
 };
 
 const IATTest = () => {
-	const [stimulus, setStimulus] = React.useState<Stimulus | null>(null);
 	const [trial, setTrial] = React.useState(0);
 	const [reactionTimes, setReactionTimes] = React.useState<ReactionTime[]>([]);
 	const [level, setLevel] = React.useState(1); // Track the current level
 	const [showInstructions, setShowInstructions] = React.useState(true); // Instructions for each level
 	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
-	const [timer, setTimer] = React.useState<number | undefined>(undefined);
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
 
 	// Conditionally set stimuli based on the current level or practice mode
@@ -94,7 +93,6 @@ const IATTest = () => {
 
 	const handleNextTrial = React.useCallback(
 		(userResponse = false) => {
-			clearTimeout(timer);
 			if (!userResponse) {
 				setReactionTimes([
 					...reactionTimes,
@@ -118,39 +116,26 @@ const IATTest = () => {
 				}
 			}
 		},
-		[timer, currentStimuli, isPractice, level, trial, reactionTimes],
+		[currentStimuli, isPractice, level, trial, reactionTimes],
 	);
+	const stimulus = currentStimuli[trial];
 
-	React.useEffect(() => {
-		if (trial < currentStimuli.length) {
-			setStimulus(currentStimuli[trial]);
+	useInterval(
+		() => {
+			setTimeLeft((prev) => {
+				if (prev <= 0) {
+					return 0; // Prevent negative value
+				}
+				return prev - 0.1; // Decrease time left by 0.1 seconds
+			});
 
-			// Only set the timer if not in practice mode
-			if (!isPractice) {
-				setTimeLeft(3); // Reset timer for each trial
-				setTimer(
-					setTimeout(() => {
-						handleNextTrial(false); // Automatically move to the next trial
-					}, 3000),
-				);
-
-				const countdown = setInterval(() => {
-					setTimeLeft((prev) => {
-						if (prev <= 0) {
-							clearInterval(countdown);
-							return 0; // Prevent negative value
-						}
-						return prev - 0.1; // Decrease time left by 0.1 seconds
-					});
-				}, 100); // Update every 100 ms
-
-				return () => {
-					clearTimeout(timer);
-					clearInterval(countdown);
-				};
+			if (timeLeft <= 0) {
+				handleNextTrial(false);
+				setTimeLeft(3);
 			}
-		}
-	}, [trial, currentStimuli, isPractice, handleNextTrial, timer]);
+		},
+		!isPractice && trial < currentStimuli.length ? 100 : null,
+	);
 
 	React.useEffect(() => {
 		const handleResponse = (e: KeyboardEvent) => {
@@ -189,6 +174,7 @@ const IATTest = () => {
 
 			const correct = keyPressed === expectedKey;
 			setReactionTimes([...reactionTimes, { reactionTime, correct }]);
+			setTimeLeft(3);
 			handleNextTrial(true); // Move to the next trial
 		};
 		window.addEventListener("keydown", handleResponse);
