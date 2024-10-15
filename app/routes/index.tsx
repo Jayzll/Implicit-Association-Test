@@ -16,72 +16,121 @@ const Index = () => {
 
 export default Index;
 
+type Stimulus = {
+	word: string;
+	category: string;
+};
+
+type ReactionTime = {
+	reactionTime: number;
+	correct: boolean;
+};
+
+// Practice Stimuli
+const practiceStimuli = [
+	{ word: "Chemistry", category: "Science" },
+	{ word: "Literature", category: "Liberal Arts" },
+	{ word: "Nuclear Physics", category: "Science" },
+	{ word: "Photography", category: "Liberal Arts" },
+];
+
+// Level 1: Science vs Liberal Arts
+const level1Stimuli = [
+	{ word: "Anthropology", category: "Liberal Arts" },
+	{ word: "Astrophysics", category: "Science" },
+	{ word: "Philosophy", category: "Liberal Arts" },
+	{ word: "Biology", category: "Science" },
+];
+
+// Level 2: Male vs Female
+const level2Stimuli = [
+	{ word: "Dad", category: "Male" },
+	{ word: "Mom", category: "Female" },
+	{ word: "Brother", category: "Male" },
+	{ word: "Sister", category: "Female" },
+];
+
+// Level 3: Combined Male/Female + Science/Liberal Arts
+const level3Stimuli = [
+	{ word: "Anthropology", category: "Liberal Arts" },
+	{ word: "Astrophysics", category: "Science" },
+	{ word: "Dad", category: "Male" },
+	{ word: "Mom", category: "Female" },
+];
+
+// Shuffle function using Fisher-Yates algorithm
+const shuffleArray = (array: Stimulus[]) => {
+	const shuffledArray = [...array];
+	for (let i = shuffledArray.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+	}
+	return shuffledArray;
+};
+
 const IATTest = () => {
-	const [stimulus, setStimulus] = React.useState(null);
+	const [stimulus, setStimulus] = React.useState<Stimulus | null>(null);
 	const [trial, setTrial] = React.useState(0);
-	const [reactionTimes, setReactionTimes] = React.useState([]);
+	const [reactionTimes, setReactionTimes] = React.useState<ReactionTime[]>([]);
 	const [level, setLevel] = React.useState(1); // Track the current level
 	const [showInstructions, setShowInstructions] = React.useState(true); // Instructions for each level
 	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
+	const [currentStimuli, setCurrentStimuli] = React.useState<Stimulus[]>(
+		shuffleArray(
+			isPractice
+				? practiceStimuli
+				: level === 1
+					? level1Stimuli
+					: level === 2
+						? level2Stimuli
+						: level3Stimuli,
+		),
+	);
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
 	// const [timer, setTimer] = React.useState(null);
-	const [timer, setTimer] = React.useState<NodeJS.Timeout | null>(null);
+	const [timer, setTimer] = React.useState<number | undefined>(undefined);
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
 
-	// Practice Stimuli
-	const practiceStimuli = [
-		{ word: "Chemistry", category: "Science" },
-		{ word: "Literature", category: "Liberal Arts" },
-		{ word: "Nuclear Physics", category: "Science" },
-		{ word: "Photography", category: "Liberal Arts" },
-	];
+	// // Conditionally set stimuli based on the current level or practice mode
+	// let currentStimuli: Stimulus[] = [];
+	// if (isPractice) {
+	// 	currentStimuli = shuffleArray(practiceStimuli); // Shuffle practice stimuli
+	// } else if (level === 1) {
+	// 	currentStimuli = shuffleArray(level1Stimuli); // Shuffle Level 1 stimuli
+	// } else if (level === 2) {
+	// 	currentStimuli = shuffleArray(level2Stimuli); // Shuffle Level 2 stimuli
+	// } else if (level === 3) {
+	// 	currentStimuli = shuffleArray(level3Stimuli); // Shuffle Level 3 stimuli
+	// }
 
-	// Level 1: Science vs Liberal Arts
-	const level1Stimuli = [
-		{ word: "Anthropology", category: "Liberal Arts" },
-		{ word: "Astrophysics", category: "Science" },
-		{ word: "Philosophy", category: "Liberal Arts" },
-		{ word: "Biology", category: "Science" },
-	];
-
-	// Level 2: Male vs Female
-	const level2Stimuli = [
-		{ word: "Dad", category: "Male" },
-		{ word: "Mom", category: "Female" },
-		{ word: "Brother", category: "Male" },
-		{ word: "Sister", category: "Female" },
-	];
-
-	// Level 3: Combined Male/Female + Science/Liberal Arts
-	const level3Stimuli = [
-		{ word: "Anthropology", category: "Liberal Arts" },
-		{ word: "Astrophysics", category: "Science" },
-		{ word: "Dad", category: "Male" },
-		{ word: "Mom", category: "Female" },
-	];
-
-	// Shuffle function using Fisher-Yates algorithm
-	const shuffleArray = (array) => {
-		let shuffledArray = [...array];
-		for (let i = shuffledArray.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
-			[shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
-		}
-		return shuffledArray;
-	};
-
-	// Conditionally set stimuli based on the current level or practice mode
-	let currentStimuli = [];
-	if (isPractice) {
-		currentStimuli = shuffleArray(practiceStimuli); // Shuffle practice stimuli
-	} else if (level === 1) {
-		currentStimuli = shuffleArray(level1Stimuli); // Shuffle Level 1 stimuli
-	} else if (level === 2) {
-		currentStimuli = shuffleArray(level2Stimuli); // Shuffle Level 2 stimuli
-	} else if (level === 3) {
-		currentStimuli = shuffleArray(level3Stimuli); // Shuffle Level 3 stimuli
-	}
-
+	const handleNextTrial = React.useCallback(
+		(userResponse = false) => {
+			clearTimeout(timer);
+			if (!userResponse) {
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime: 0, correct: false },
+				]);
+			}
+			if (trial + 1 < currentStimuli.length) {
+				setTrial(trial + 1); // Move to the next trial
+			} else {
+				if (isPractice) {
+					// After practice, start level 1
+					setIsPractice(false);
+					setShowReadyScreen(true);
+					setLevel(0);
+					setTrial(0); // Reset trials for the new level
+				} else if (level < 3) {
+					// Move to next level after current level ends
+					setShowReadyScreen(true);
+				} else {
+					setLevel(level + 1); // Proceed to the result screen
+				}
+			}
+		},
+		[timer, currentStimuli, isPractice, level, trial, reactionTimes],
+	);
 
 	React.useEffect(() => {
 		if (trial < currentStimuli.length) {
@@ -112,82 +161,74 @@ const IATTest = () => {
 				};
 			}
 		}
-	}, [trial, currentStimuli, isPractice]);
-
-	const handleNextTrial = (userResponse = false) => {
-		clearTimeout(timer);
-		if (!userResponse) {
-			setReactionTimes([
-				...reactionTimes,
-				{ reactionTimes: 0, correct: false },
-			]);
-		}
-		if (trial + 1 < currentStimuli.length) {
-			setTrial(trial + 1); // Move to the next trial
-		} else {
-			if (isPractice) {
-				// After practice, start level 1
-				setIsPractice(false);
-				setShowReadyScreen(true);
-				setLevel(0);
-				setTrial(0); // Reset trials for the new level
-			} else if (level < 3) {
-				// Move to next level after current level ends
-				setShowReadyScreen(true);
-			} else {
-				setLevel(level + 1); // Proceed to the result screen
-			}
-		}
-	};
-
-	const handleResponse = (e) => {
-		if (!stimulus || trial >= currentStimuli.length) return;
-
-		const keyPressed = e.key.toLowerCase();
-
-		if (keyPressed !== "e" && keyPressed !== "i") {
-			return;
-		}
-
-		const startTime = performance.now();
-		const endTime = performance.now();
-		const reactionTime = endTime - startTime;
-
-		let expectedKey;
-		if (isPractice) {
-			// Practice: Liberal Arts ('e') vs Science ('i'), Male ('e') vs Female ('i')
-			expectedKey =
-				stimulus.category === "Liberal Arts" || stimulus.category === "Male"
-					? "e"
-					: "i";
-		} else if (level === 1) {
-			// Level 1: Liberal Arts ('e') vs Science ('i')
-			expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i";
-		} else if (level === 2) {
-			// Level 2: Male ('e') vs Female ('i')
-			expectedKey = stimulus.category === "Male" ? "e" : "i";
-		} else if (level === 3) {
-			// Level 3: Combined task
-			expectedKey =
-				stimulus.category === "Liberal Arts" || stimulus.category === "Male"
-					? "e"
-					: "i";
-		}
-
-		const correct = keyPressed === expectedKey;
-		setReactionTimes([...reactionTimes, { reactionTime, correct }]);
-		handleNextTrial(true); // Move to the next trial
-	};
+	}, [trial, currentStimuli, isPractice, handleNextTrial, timer]);
 
 	React.useEffect(() => {
+		const handleResponse = (e: KeyboardEvent) => {
+			if (!stimulus || trial >= currentStimuli.length) return;
+
+			const keyPressed = e.key.toLowerCase();
+
+			if (keyPressed !== "e" && keyPressed !== "i") {
+				return;
+			}
+
+			const startTime = performance.now();
+			const endTime = performance.now();
+			const reactionTime = endTime - startTime;
+
+			let expectedKey = "";
+			if (isPractice) {
+				// Practice: Liberal Arts ('e') vs Science ('i'), Male ('e') vs Female ('i')
+				expectedKey =
+					stimulus.category === "Liberal Arts" || stimulus.category === "Male"
+						? "e"
+						: "i";
+			} else if (level === 1) {
+				// Level 1: Liberal Arts ('e') vs Science ('i')
+				expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i";
+			} else if (level === 2) {
+				// Level 2: Male ('e') vs Female ('i')
+				expectedKey = stimulus.category === "Male" ? "e" : "i";
+			} else if (level === 3) {
+				// Level 3: Combined task
+				expectedKey =
+					stimulus.category === "Liberal Arts" || stimulus.category === "Male"
+						? "e"
+						: "i";
+			}
+
+			const correct = keyPressed === expectedKey;
+			setReactionTimes([...reactionTimes, { reactionTime, correct }]);
+			handleNextTrial(true); // Move to the next trial
+		};
 		window.addEventListener("keydown", handleResponse);
 		return () => {
 			window.removeEventListener("keydown", handleResponse);
 		};
-	}, [trial, stimulus, isPractice]);
+	}, [
+		trial,
+		stimulus,
+		isPractice,
+		currentStimuli.length,
+		handleNextTrial,
+		level,
+		reactionTimes,
+	]);
 
 	const startNextLevel = () => {
 		setLevel(level + 1);
+		setCurrentStimuli(
+			shuffleArray(
+				isPractice
+					? practiceStimuli
+					: level === 1
+						? level1Stimuli
+						: level === 2
+							? level2Stimuli
+							: level3Stimuli,
+			),
+		);
 		setTrial(0); // Reset trials for the new level
 		setShowReadyScreen(false); // Hide the ready screen
 	};
@@ -212,7 +253,7 @@ const IATTest = () => {
 
 	// Ready screen between levels
 	if (showReadyScreen) {
-		let nextTask;
+		let nextTask = "";
 		if (level === 0) nextTask = "Science vs Liberal Arts categories";
 		if (level === 1) nextTask = "Male vs Female categories";
 		if (level === 2)
@@ -224,7 +265,9 @@ const IATTest = () => {
 				<p>
 					In the next level, you will sort <strong>{nextTask}</strong>.
 				</p>
-				<button onClick={startNextLevel}>Start Next Level</button>
+				<button type="button" onClick={startNextLevel}>
+					Start Next Level
+				</button>
 			</div>
 		);
 	}
@@ -247,7 +290,7 @@ const IATTest = () => {
 				<p>In Level 1, you will sort Science and Liberal Arts categories</p>
 				<p>In Level 2, you will sort Male and Female categories.</p>
 				<p>In Level 3, you will sort combined categories.</p>
-				<button onClick={() => setShowInstructions(false)}>
+				<button type="button" onClick={() => setShowInstructions(false)}>
 					Start Practice
 				</button>
 			</div>

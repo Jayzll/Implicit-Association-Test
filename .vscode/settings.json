@@ -3,5 +3,11 @@
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"[json]": {
 		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
 	}
 }
