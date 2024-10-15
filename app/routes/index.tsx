@@ -24,7 +24,8 @@ const IATTest = () => {
 	const [showInstructions, setShowInstructions] = React.useState(true); // Instructions for each level
 	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
-	const [timer, setTimer] = React.useState(null);
+	// const [timer, setTimer] = React.useState(null);
+	const [timer, setTimer] = React.useState<NodeJS.Timeout | null>(null);
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
 
 	// Practice Stimuli
@@ -59,17 +60,28 @@ const IATTest = () => {
 		{ word: "Mom", category: "Female" },
 	];
 
+	// Shuffle function using Fisher-Yates algorithm
+	const shuffleArray = (array) => {
+		let shuffledArray = [...array];
+		for (let i = shuffledArray.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+		}
+		return shuffledArray;
+	};
+
 	// Conditionally set stimuli based on the current level or practice mode
 	let currentStimuli = [];
 	if (isPractice) {
-		currentStimuli = practiceStimuli;
+		currentStimuli = shuffleArray(practiceStimuli); // Shuffle practice stimuli
 	} else if (level === 1) {
-		currentStimuli = level1Stimuli;
+		currentStimuli = shuffleArray(level1Stimuli); // Shuffle Level 1 stimuli
 	} else if (level === 2) {
-		currentStimuli = level2Stimuli;
+		currentStimuli = shuffleArray(level2Stimuli); // Shuffle Level 2 stimuli
 	} else if (level === 3) {
-		currentStimuli = level3Stimuli;
+		currentStimuli = shuffleArray(level3Stimuli); // Shuffle Level 3 stimuli
 	}
+
 
 	React.useEffect(() => {
 		if (trial < currentStimuli.length) {
@@ -100,7 +112,7 @@ const IATTest = () => {
 				};
 			}
 		}
-	}, [trial, level, isPractice]);
+	}, [trial, currentStimuli, isPractice]);
 
 	const handleNextTrial = (userResponse = false) => {
 		clearTimeout(timer);

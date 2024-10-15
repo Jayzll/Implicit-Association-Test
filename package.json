@@ -14,9 +14,11 @@
 		"@react-router/node": "7.0.0-pre.0",
 		"@react-router/serve": "7.0.0-pre.0",
 		"isbot": "^5.1.17",
+		"pnpm": "^9.12.1",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1",
-		"react-router": "7.0.0-pre.0"
+		"react-router": "7.0.0-pre.0",
+		"react-router-dom": "^6.26.2"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.3",
