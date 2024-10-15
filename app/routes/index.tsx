@@ -75,8 +75,13 @@ const IATTest = () => {
 	const [level, setLevel] = React.useState(1); // Track the current level
 	const [showInstructions, setShowInstructions] = React.useState(true); // Instructions for each level
 	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
-	const [currentStimuli, setCurrentStimuli] = React.useState<Stimulus[]>(
-		shuffleArray(
+	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
+	const [timer, setTimer] = React.useState<number | undefined>(undefined);
+	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
+
+	// Conditionally set stimuli based on the current level or practice mode
+	const currentStimuli: Stimulus[] = React.useMemo(() => {
+		return shuffleArray(
 			isPractice
 				? practiceStimuli
 				: level === 1
@@ -84,24 +89,8 @@ const IATTest = () => {
 					: level === 2
 						? level2Stimuli
 						: level3Stimuli,
-		),
-	);
-	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
-	// const [timer, setTimer] = React.useState(null);
-	const [timer, setTimer] = React.useState<number | undefined>(undefined);
-	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
-
-	// // Conditionally set stimuli based on the current level or practice mode
-	// let currentStimuli: Stimulus[] = [];
-	// if (isPractice) {
-	// 	currentStimuli = shuffleArray(practiceStimuli); // Shuffle practice stimuli
-	// } else if (level === 1) {
-	// 	currentStimuli = shuffleArray(level1Stimuli); // Shuffle Level 1 stimuli
-	// } else if (level === 2) {
-	// 	currentStimuli = shuffleArray(level2Stimuli); // Shuffle Level 2 stimuli
-	// } else if (level === 3) {
-	// 	currentStimuli = shuffleArray(level3Stimuli); // Shuffle Level 3 stimuli
-	// }
+		);
+	}, [isPractice, level]);
 
 	const handleNextTrial = React.useCallback(
 		(userResponse = false) => {
@@ -218,17 +207,6 @@ const IATTest = () => {
 
 	const startNextLevel = () => {
 		setLevel(level + 1);
-		setCurrentStimuli(
-			shuffleArray(
-				isPractice
-					? practiceStimuli
-					: level === 1
-						? level1Stimuli
-						: level === 2
-							? level2Stimuli
-							: level3Stimuli,
-			),
-		);
 		setTrial(0); // Reset trials for the new level
 		setShowReadyScreen(false); // Hide the ready screen
 	};
