@@ -93,6 +93,9 @@ const IATTest = () => {
 
 	const handleNextTrial = React.useCallback(
 		(userResponse = false) => {
+			if (level > 3) {
+				return;
+			}
 			if (!userResponse) {
 				setReactionTimes([
 					...reactionTimes,
@@ -122,24 +125,26 @@ const IATTest = () => {
 
 	useInterval(
 		() => {
-			setTimeLeft((prev) => {
-				if (prev <= 0) {
-					return 0; // Prevent negative value
-				}
-				return prev - 0.1; // Decrease time left by 0.1 seconds
-			});
+			if (level <=3 && trial < currentStimuli.length) {
+				setTimeLeft((prev) => {
+					if (prev <= 0) {
+						return 0; // Prevent negative value
+					}
+					return prev - 0.1; // Decrease time left by 0.1 seconds
+				});
 
-			if (timeLeft <= 0) {
-				handleNextTrial(false);
-				setTimeLeft(3);
+				if (timeLeft <= 0) {
+					handleNextTrial(false);
+					setTimeLeft(3);
+				}	
 			}
 		},
-		!isPractice && trial < currentStimuli.length ? 100 : null,
+		!isPractice && trial < currentStimuli.length && level <= 3 ? 100 : null,
 	);
 
 	React.useEffect(() => {
 		const handleResponse = (e: KeyboardEvent) => {
-			if (!stimulus || trial >= currentStimuli.length) return;
+			if (level > 3 || !stimulus || trial >= currentStimuli.length) return;
 
 			const keyPressed = e.key.toLowerCase();
 
