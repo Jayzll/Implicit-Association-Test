@@ -6,8 +6,8 @@ import { useInterval } from "~/utils";
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: "New Remix App" },
-		{ name: "description", content: "Welcome to Remix!" },
+		{ title: "IAT App" },
+		{ name: "description", content: "Welcome to IAT" },
 	];
 };
 
@@ -25,6 +25,7 @@ type Stimulus = {
 type ReactionTime = {
 	reactionTime: number;
 	correct: boolean;
+	category: string;
 };
 
 // Practice Stimuli
@@ -77,6 +78,7 @@ const IATTest = () => {
 	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
+	const [startTime, setStartTime] = React.useState<number | null>(null); // New state for start time
 
 	// Conditionally set stimuli based on the current level or practice mode
 	const currentStimuli: Stimulus[] = React.useMemo(() => {
@@ -97,13 +99,14 @@ const IATTest = () => {
 				return;
 			}
 			if (!userResponse) {
-				setReactionTimes([
-					...reactionTimes,
-					{ reactionTime: 0, correct: false },
-				]);
-			}
+                setReactionTimes([
+                    ...reactionTimes,
+                    { reactionTime: 0, correct: false, category: stimulus.category },
+                ]);
+            }
 			if (trial + 1 < currentStimuli.length) {
 				setTrial(trial + 1); // Move to the next trial
+				setStartTime(performance.now()); 
 			} else {
 				if (isPractice) {
 					// After practice, start level 1
@@ -152,9 +155,9 @@ const IATTest = () => {
 				return;
 			}
 
-			const startTime = performance.now();
+			// const startTime = performance.now();
 			const endTime = performance.now();
-			const reactionTime = endTime - startTime;
+			const reactionTime = startTime ? endTime - startTime : 0;
 
 			let expectedKey = "";
 			if (isPractice) {
@@ -178,7 +181,10 @@ const IATTest = () => {
 			}
 
 			const correct = keyPressed === expectedKey;
-			setReactionTimes([...reactionTimes, { reactionTime, correct }]);
+			setReactionTimes([
+				...reactionTimes,
+				{ reactionTime, correct, category: stimulus.category } // Include category here
+			]);
 			setTimeLeft(3);
 			handleNextTrial(true); // Move to the next trial
 		};
@@ -194,6 +200,7 @@ const IATTest = () => {
 		handleNextTrial,
 		level,
 		reactionTimes,
+		startTime,
 	]);
 
 	const startNextLevel = () => {
@@ -203,23 +210,76 @@ const IATTest = () => {
 		setShowReadyScreen(false); // Hide the ready screen
 	};
 
+	const avgReactionTimeForPair = (category1: string, category2: string) => {
+		const times = reactionTimes
+			.filter((rt) =>
+				rt.correct &&
+				(rt.category === category1 || rt.category === category2) // Match categories
+			)
+			.map((rt) => rt.reactionTime);
+	
+		return times.length > 0
+			? (times.reduce((acc, time) => acc + time, 0) / times.length).toFixed(2)
+			: "0.00";
+	};
+	
+
+
 	// Final results after all levels
 	if (level > 3) {
 		const correctResponses = reactionTimes.filter((rt) => rt.correct).length;
-		const avgReactionTime = (
-			reactionTimes.reduce((acc, curr) => acc + curr.reactionTime, 0) /
-			reactionTimes.length
-		).toFixed(2);
+		const totalTrials = reactionTimes.length;
+		const avgReactionTime = totalTrials > 0 
+			? (
+				reactionTimes.reduce((acc, curr) => acc + curr.reactionTime, 0) / totalTrials
+				).toFixed(2)
+			: "0.00"; // default to "0.00" if no trials
+
+			console.log("Average Reaction Time:", avgReactionTime); // for debugging
+
+
+		// // Additional result calculation: average reaction time per level
+		// const getAvgReactionTimeByLevel = (level) => {
+		// 	const levelTimes = reactionTimes
+		// 		.filter((rt, index) => 
+		// 			(index < practiceStimuli.length && level === 1) ||
+		// 			(index >= practiceStimuli.length && index < practiceStimuli.length + level1Stimuli.length && level === 2) ||
+		// 			(index >= practiceStimuli.length + level1Stimuli.length && level === 3)
+		// 		)
+		// 		.map((rt) => rt.reactionTime);
+
+		// 	return (
+		// 		levelTimes.reduce((acc, curr) => acc + curr, 0) / levelTimes.length
+		// 	).toFixed(2);
+		// };
+
+		// const avgReactionTimeLevel1 = getAvgReactionTimeByLevel(1);
+		// const avgReactionTimeLevel2 = getAvgReactionTimeByLevel(2);
+		// const avgReactionTimeLevel3 = getAvgReactionTimeByLevel(3);
+		// Use avgReactionTimeForPair to get averages for each pairing
+        const avgFemaleScience = avgReactionTimeForPair("Female", "Science");
+        const avgMaleScience = avgReactionTimeForPair("Male", "Science");
+        const avgFemaleArts = avgReactionTimeForPair("Female", "Liberal Arts");
+        const avgMaleArts = avgReactionTimeForPair("Male", "Liberal Arts");		
 
 		return (
 			<div className="IAT-container">
 				<h2>Test Completed</h2>
-				<p>Total Trials: {reactionTimes.length}</p>
+				<p>Total Trials: {totalTrials}</p>
 				<p>Correct Responses: {correctResponses}</p>
 				<p>Average Reaction Time: {avgReactionTime} ms</p>
+				<p>Average Reaction Time (Female-Science): {avgFemaleScience} ms</p>
+				<p>Average Reaction Time (Male-Science): {avgMaleScience} ms</p>
+				<p>Average Reaction Time (Female-Arts): {avgFemaleArts} ms</p>
+				<p>Average Reaction Time (Male-Arts): {avgMaleArts} ms</p>
+
+				<h3>Interpretation:</h3>
+				<p>{avgFemaleScience < avgMaleScience ? "Participant shows a stronger association between females and science." : "Participant shows a stronger association between males and science."}</p>
+				<p>{avgFemaleArts < avgMaleArts ? "Participant shows a stronger association between females and arts." : "Participant shows a stronger association between males and arts."}</p>
 			</div>
 		);
 	}
+
 
 	// Ready screen between levels
 	if (showReadyScreen) {
@@ -246,7 +306,7 @@ const IATTest = () => {
 	if (showInstructions) {
 		return (
 			<div className="IAT-container">
-				<h2>How to Play</h2>
+				<h2>HOW SEXIST ARE YOU</h2>
 				<p>
 					{" "}
 					You have selected the Gender-Science Task. In this study you will
