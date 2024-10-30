@@ -37,12 +37,26 @@ const practiceStimuli = [
 ];
 
 // Level 1: Science vs Liberal Arts
+// Level 1: Science vs Liberal Arts
 const level1Stimuli = [
-	{ word: "Anthropology", category: "Liberal Arts" },
-	{ word: "Astrophysics", category: "Science" },
-	{ word: "Philosophy", category: "Liberal Arts" },
-	{ word: "Biology", category: "Science" },
+    { word: "Anthropology", category: "Liberal Arts" },
+    { word: "Astrophysics", category: "Science" },
+    { word: "Philosophy", category: "Liberal Arts" },
+    { word: "Biology", category: "Science" },
+    { word: "Psychology", category: "Science" },
+    { word: "Chemistry", category: "Science" },
+    { word: "Sociology", category: "Liberal Arts" },
+    { word: "Physics", category: "Science" },
+    { word: "Political Science", category: "Liberal Arts" },
+    { word: "Genetics", category: "Science" },
+    { word: "History", category: "Liberal Arts" },
+    { word: "Geology", category: "Science" },
+    { word: "Literature", category: "Liberal Arts" },
+    { word: "Neuroscience", category: "Science" },
+    { word: "Linguistics", category: "Liberal Arts" },
+    { word: "Ecology", category: "Science" }
 ];
+
 
 // Level 2: Male vs Female
 const level2Stimuli = [
@@ -50,14 +64,38 @@ const level2Stimuli = [
 	{ word: "Mom", category: "Female" },
 	{ word: "Brother", category: "Male" },
 	{ word: "Sister", category: "Female" },
+	{ word: "Grandpa", category: "Male"},
+	{ word: "Grandma", category: "Female" },
+	{ word: "Uncle", category: "Male"},
+	{ word: "Auntie", category: "Female" },
 ];
 
 // Level 3: Combined Male/Female + Science/Liberal Arts
 const level3Stimuli = [
 	{ word: "Anthropology", category: "Liberal Arts" },
-	{ word: "Astrophysics", category: "Science" },
+    { word: "Astrophysics", category: "Science" },
+    { word: "Philosophy", category: "Liberal Arts" },
+    { word: "Biology", category: "Science" },
+    { word: "Psychology", category: "Science" },
+    { word: "Chemistry", category: "Science" },
+    { word: "Sociology", category: "Liberal Arts" },
+    { word: "Physics", category: "Science" },
+    { word: "Political Science", category: "Liberal Arts" },
+    { word: "Genetics", category: "Science" },
+    { word: "History", category: "Liberal Arts" },
+    { word: "Geology", category: "Science" },
+    { word: "Literature", category: "Liberal Arts" },
+    { word: "Neuroscience", category: "Science" },
+    { word: "Linguistics", category: "Liberal Arts" },
+    { word: "Ecology", category: "Science" },
 	{ word: "Dad", category: "Male" },
 	{ word: "Mom", category: "Female" },
+	{ word: "Brother", category: "Male" },
+	{ word: "Sister", category: "Female" },
+	{ word: "Grandpa", category: "Male"},
+	{ word: "Grandma", category: "Female" },
+	{ word: "Uncle", category: "Male"},
+	{ word: "Auntie", category: "Female" },
 ];
 
 // Shuffle function using Fisher-Yates algorithm
@@ -181,12 +219,22 @@ const IATTest = () => {
 			}
 
 			const correct = keyPressed === expectedKey;
-			setReactionTimes([
-				...reactionTimes,
-				{ reactionTime, correct, category: stimulus.category } // Include category here
-			]);
-			setTimeLeft(3);
-			handleNextTrial(true); // Move to the next trial
+			// Only allow moving to the next trial if the response is correct
+			if (correct) {
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime, correct, category: stimulus.category },
+				]);
+				setTimeLeft(3); // Reset timer for next trial
+				handleNextTrial(true); // Move to the next trial
+			} else {
+				// Show an error if the response is incorrect
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime, correct: false, category: stimulus.category },
+				]);
+				// You can also add an error state to show a red 'X' or other error indicator
+			}
 		};
 		window.addEventListener("keydown", handleResponse);
 		return () => {
