@@ -71,7 +71,7 @@ const level2Stimuli = [
 ];
 
 // Level 3: Combined Male/Female + Science/Liberal Arts
-const level3Stimuli = [
+const combinedStimuli = [
 	{ word: "Anthropology", category: "Liberal Arts" },
     { word: "Astrophysics", category: "Science" },
     { word: "Philosophy", category: "Liberal Arts" },
@@ -127,7 +127,7 @@ const IATTest = () => {
 					? level1Stimuli
 					: level === 2
 						? level2Stimuli
-						: level3Stimuli,
+						: combinedStimuli,
 		);
 	}, [isPractice, level]);
 
@@ -166,7 +166,7 @@ const IATTest = () => {
 
 	useInterval(
 		() => {
-			if (level <=3 && trial < currentStimuli.length) {
+			if (level <=6 && trial < currentStimuli.length) {
 				setTimeLeft((prev) => {
 					if (prev <= 0) {
 						return 0; // Prevent negative value
@@ -180,12 +180,12 @@ const IATTest = () => {
 				}	
 			}
 		},
-		!isPractice && trial < currentStimuli.length && level <= 3 ? 100 : null,
+		!isPractice && trial < currentStimuli.length && level <= 6 ? 100 : null,
 	);
 
 	React.useEffect(() => {
 		const handleResponse = (e: KeyboardEvent) => {
-			if (level > 3 || !stimulus || trial >= currentStimuli.length) return;
+			if (level > 6 || !stimulus || trial >= currentStimuli.length) return;
 
 			const keyPressed = e.key.toLowerCase();
 
@@ -193,7 +193,6 @@ const IATTest = () => {
 				return;
 			}
 
-			// const startTime = performance.now();
 			const endTime = performance.now();
 			const reactionTime = startTime ? endTime - startTime : 0;
 
@@ -211,11 +210,20 @@ const IATTest = () => {
 				// Level 2: Male ('e') vs Female ('i')
 				expectedKey = stimulus.category === "Male" ? "e" : "i";
 			} else if (level === 3) {
-				// Level 3: Combined task
+				// Level 3: Combined task (e.g., Liberal Arts and Male vs Science and Female)
+				expectedKey = 
+					(stimulus.category === "Liberal Arts" || stimulus.category === "Male") ? "e" : "i";
+			} else if (level === 4) {
+				// Level 4: Male and Science ('e') vs Female and Liberal Arts ('i')
 				expectedKey =
-					stimulus.category === "Liberal Arts" || stimulus.category === "Male"
-						? "e"
-						: "i";
+					(stimulus.category === "Male" || stimulus.category === "Science") ? "e" : "i";
+			} else if (level === 5) {
+				// Level 5: Female and Science ('e') vs Male and Liberal Arts ('i')
+				expectedKey =
+					(stimulus.category === "Female" || stimulus.category === "Science") ? "e" : "i";
+			} else if (level === 6) {
+				// Level 6: Back to a basic task if needed or any final condition
+				expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i"; // Example condition
 			}
 
 			const correct = keyPressed === expectedKey;
@@ -274,7 +282,7 @@ const IATTest = () => {
 
 
 	// Final results after all levels
-	if (level > 3) {
+	if (level > 6) {
 		const correctResponses = reactionTimes.filter((rt) => rt.correct).length;
 		const totalTrials = reactionTimes.length;
 		const avgReactionTime = totalTrials > 0 
@@ -284,27 +292,6 @@ const IATTest = () => {
 			: "0.00"; // default to "0.00" if no trials
 
 			console.log("Average Reaction Time:", avgReactionTime); // for debugging
-
-
-		// // Additional result calculation: average reaction time per level
-		// const getAvgReactionTimeByLevel = (level) => {
-		// 	const levelTimes = reactionTimes
-		// 		.filter((rt, index) => 
-		// 			(index < practiceStimuli.length && level === 1) ||
-		// 			(index >= practiceStimuli.length && index < practiceStimuli.length + level1Stimuli.length && level === 2) ||
-		// 			(index >= practiceStimuli.length + level1Stimuli.length && level === 3)
-		// 		)
-		// 		.map((rt) => rt.reactionTime);
-
-		// 	return (
-		// 		levelTimes.reduce((acc, curr) => acc + curr, 0) / levelTimes.length
-		// 	).toFixed(2);
-		// };
-
-		// const avgReactionTimeLevel1 = getAvgReactionTimeByLevel(1);
-		// const avgReactionTimeLevel2 = getAvgReactionTimeByLevel(2);
-		// const avgReactionTimeLevel3 = getAvgReactionTimeByLevel(3);
-		// Use avgReactionTimeForPair to get averages for each pairing
         const avgFemaleScience = avgReactionTimeForPair("Female", "Science");
         const avgMaleScience = avgReactionTimeForPair("Male", "Science");
         const avgFemaleArts = avgReactionTimeForPair("Female", "Liberal Arts");
@@ -334,8 +321,10 @@ const IATTest = () => {
 		let nextTask = "";
 		if (level === 0) nextTask = "Science vs Liberal Arts categories";
 		if (level === 1) nextTask = "Male vs Female categories";
-		if (level === 2)
-			nextTask = "Combined Male/Female with Science/Liberal Arts";
+		if (level === 2) nextTask = "Combined Male/Female with Science/Liberal Arts";
+		if (level === 3) nextTask = "Male and Science vs Female and Liberal Arts";
+		if (level === 4) nextTask = "Female and Science vs Male and Liberal Arts";
+		if (level === 5) nextTask = "Basic Science vs Liberal Arts Task";
 
 		return (
 			<div className="IAT-container">
@@ -387,8 +376,17 @@ const IATTest = () => {
 			<div className="categories-stimulus-row">
 				{/* Left categories */}
 				<div className="category-left">
-					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : <h2>Male</h2>}
-					{level === 3 && <h3>Liberal Arts</h3>}
+					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : 
+						level === 2 ? <h2>Male</h2> :
+						level === 3 ? <h2> Male</h2> :
+						level === 4 ? <h2>Male </h2> : 
+						level === 5 ? <h2>Female</h2> :
+						<h2>Female</h2> 
+					}
+					{level === 3 && <h3>Science</h3>}
+					{level === 4 && <h3>Art</h3>}
+					{level === 5 && <h3>Art</h3>}
+					{level === 6 && <h3>Science</h3>}
 				</div>
 
 				{/* Central stimulus */}
@@ -398,8 +396,17 @@ const IATTest = () => {
 
 				{/* Right categories */}
 				<div className="category-right">
-					{isPractice || level === 1 ? <h2>Science</h2> : <h2>Female</h2>}
-					{level === 3 && <h3>Science</h3>}
+					{isPractice || level === 1 ? <h2>Science</h2> : 
+					level === 2 ? <h2>Female</h2> :
+					level === 3 ? <h2>Female</h2> :
+					level === 4 ? <h2>Female</h2> :
+					level === 5 ? <h2>Male</h2> :
+					<h2>Male</h2>
+					}
+					{level === 3 && <h3>Liberal Art</h3>}
+					{level === 4 && <h3>Science</h3>}
+					{level === 5 && <h3>Science</h3>}
+					{level === 6 && <h3>Liberal Arts</h3>}
 				</div>
 			</div>
 

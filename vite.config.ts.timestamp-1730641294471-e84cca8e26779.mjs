@@ -1,0 +1,11 @@
+// vite.config.ts
+import { reactRouter } from "file:///D:/C_DRIVE/Documents/Git_Code/IAT/iat-test/node_modules/.pnpm/@react-router+dev@7.0.0-pre.1_@react-router+serve@7.0.0-pre.1_react-router@7.0.0-pre.1_react-_velerqrmxogkppugfuzb53nyhm/node_modules/@react-router/dev/dist/vite.js";
+import tsconfigPaths from "file:///D:/C_DRIVE/Documents/Git_Code/IAT/iat-test/node_modules/.pnpm/vite-tsconfig-paths@5.0.1_typescript@5.6.2_vite@5.4.8/node_modules/vite-tsconfig-paths/dist/index.js";
+import { defineConfig } from "file:///D:/C_DRIVE/Documents/Git_Code/IAT/iat-test/node_modules/.pnpm/vite@5.4.8/node_modules/vite/dist/node/index.js";
+var vite_config_default = defineConfig({
+  plugins: [reactRouter({ ssr: true }), tsconfigPaths()]
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJEOlxcXFxDX0RSSVZFXFxcXERvY3VtZW50c1xcXFxHaXRfQ29kZVxcXFxJQVRcXFxcaWF0LXRlc3RcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfZmlsZW5hbWUgPSBcIkQ6XFxcXENfRFJJVkVcXFxcRG9jdW1lbnRzXFxcXEdpdF9Db2RlXFxcXElBVFxcXFxpYXQtdGVzdFxcXFx2aXRlLmNvbmZpZy50c1wiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9pbXBvcnRfbWV0YV91cmwgPSBcImZpbGU6Ly8vRDovQ19EUklWRS9Eb2N1bWVudHMvR2l0X0NvZGUvSUFUL2lhdC10ZXN0L3ZpdGUuY29uZmlnLnRzXCI7aW1wb3J0IHsgcmVhY3RSb3V0ZXIgfSBmcm9tIFwiQHJlYWN0LXJvdXRlci9kZXYvdml0ZVwiO1xyXG5pbXBvcnQgdHNjb25maWdQYXRocyBmcm9tIFwidml0ZS10c2NvbmZpZy1wYXRoc1wiO1xyXG5pbXBvcnQgeyBkZWZpbmVDb25maWcgfSBmcm9tIFwidml0ZVwiO1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgZGVmaW5lQ29uZmlnKHtcclxuXHRwbHVnaW5zOiBbcmVhY3RSb3V0ZXIoeyBzc3I6IHRydWUgfSksIHRzY29uZmlnUGF0aHMoKV0sXHJcbn0pO1xyXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQTRULFNBQVMsbUJBQW1CO0FBQ3hWLE9BQU8sbUJBQW1CO0FBQzFCLFNBQVMsb0JBQW9CO0FBRTdCLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQzNCLFNBQVMsQ0FBQyxZQUFZLEVBQUUsS0FBSyxLQUFLLENBQUMsR0FBRyxjQUFjLENBQUM7QUFDdEQsQ0FBQzsiLAogICJuYW1lcyI6IFtdCn0K
