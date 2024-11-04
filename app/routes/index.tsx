@@ -117,7 +117,8 @@ const IATTest = () => {
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
 	const [startTime, setStartTime] = React.useState<number | null>(null); // New state for start time
-	const [levelTrialCount, setLevelTrialCount] = React.useState(0);
+	const [nextTrialTriggered, setNextTrialTriggered] = React.useState(false);
+
 
 	// Conditionally set stimuli based on the current level or practice mode
 	const currentStimuli: Stimulus[] = React.useMemo(() => {
@@ -134,6 +135,9 @@ const IATTest = () => {
 
 	const handleNextTrial = React.useCallback(
 		(userResponse = false) => {
+			if (showReadyScreen) {
+				return;
+			}
 			console.log(`Current level: ${level}`);
 			console.log(`Current trial: ${trial}`);
 			if (level > 6) {
@@ -151,6 +155,7 @@ const IATTest = () => {
 				setTrial(trial + 1); // Move to the next trial
 				setStartTime(performance.now());
 			} else {
+				console.log("Next Level")
 				if (isPractice) {
 					// After practice, start level 1
 					setIsPractice(false);
@@ -160,14 +165,14 @@ const IATTest = () => {
 				} else if (level < 6) {
 					// Move to next level after current level ends
 					setShowReadyScreen(true);
-					setLevel(level + 1); // Move to the next level
 					setTrial(0); // Reset trial count for the new level
 				} else {
 					setLevel(level + 1); // Proceed to the result screen
+					console.log("procede to final")
 				}
 			}
 		},
-		[currentStimuli, isPractice, level, trial, reactionTimes],
+		[currentStimuli, isPractice, level, trial, reactionTimes, showReadyScreen],
 	);
 	
 	const stimulus = currentStimuli[trial];
@@ -270,6 +275,7 @@ const IATTest = () => {
 
 	const startNextLevel = () => {
 		setLevel(level + 1);
+		console.log("add level 3rd")
 		setTrial(0); // Reset trials for the new level
 		setTimeLeft(3);
 		setShowReadyScreen(false); // Hide the ready screen
