@@ -76,26 +76,26 @@ const combinedStimuli = [
     { word: "Astrophysics", category: "Science" },
     { word: "Philosophy", category: "Liberal Arts" },
     { word: "Biology", category: "Science" },
-    { word: "Psychology", category: "Science" },
-    { word: "Chemistry", category: "Science" },
-    { word: "Sociology", category: "Liberal Arts" },
-    { word: "Physics", category: "Science" },
-    { word: "Political Science", category: "Liberal Arts" },
-    { word: "Genetics", category: "Science" },
-    { word: "History", category: "Liberal Arts" },
-    { word: "Geology", category: "Science" },
-    { word: "Literature", category: "Liberal Arts" },
-    { word: "Neuroscience", category: "Science" },
-    { word: "Linguistics", category: "Liberal Arts" },
-    { word: "Ecology", category: "Science" },
+    // { word: "Psychology", category: "Science" },
+    // { word: "Chemistry", category: "Science" },
+    // { word: "Sociology", category: "Liberal Arts" },
+    // { word: "Physics", category: "Science" },
+    // { word: "Political Science", category: "Liberal Arts" },
+    // { word: "Genetics", category: "Science" },
+    // { word: "History", category: "Liberal Arts" },
+    // { word: "Geology", category: "Science" },
+    // { word: "Literature", category: "Liberal Arts" },
+    // { word: "Neuroscience", category: "Science" },
+    // { word: "Linguistics", category: "Liberal Arts" },
+    // { word: "Ecology", category: "Science" },
 	{ word: "Dad", category: "Male" },
 	{ word: "Mom", category: "Female" },
 	{ word: "Brother", category: "Male" },
 	{ word: "Sister", category: "Female" },
-	{ word: "Grandpa", category: "Male"},
-	{ word: "Grandma", category: "Female" },
-	{ word: "Uncle", category: "Male"},
-	{ word: "Auntie", category: "Female" },
+	// { word: "Grandpa", category: "Male"},
+	// { word: "Grandma", category: "Female" },
+	// { word: "Uncle", category: "Male"},
+	// { word: "Auntie", category: "Female" },
 ];
 
 // Shuffle function using Fisher-Yates algorithm
@@ -237,7 +237,7 @@ const IATTest = () => {
 			} else if (level === 6) {
 				// Level 6: Female and Art vs Male and Science 
 				expectedKey = 
-					(stimulus.category === "Female" || stimulus.category === "Art") ? "e" : "i";
+					(stimulus.category === "Female" || stimulus.category === "Liberal Arts") ? "e" : "i";
 			}
 
 			const correct = keyPressed === expectedKey;
@@ -283,10 +283,12 @@ const IATTest = () => {
 
 	const avgReactionTimeForPair = (category1: string, category2: string) => {
 		const times = reactionTimes
-			.filter((rt) =>
+			.filter((rt, index) =>
 				rt.correct &&
-				(rt.category === category1 || rt.category === category2) // Match categories
+				(rt.category === category1 || rt.category === category2)&&// Match categories
+				index >= currentStimuli.length * 2 
 			)
+
 			.map((rt) => rt.reactionTime);
 	
 		return times.length > 0
@@ -298,37 +300,41 @@ const IATTest = () => {
 
 	// Final results after all levels
 	if (level > 6) {
-		const correctResponses = reactionTimes.filter((rt) => rt.correct).length;
-		const totalTrials = reactionTimes.length;
-		const avgReactionTime = totalTrials > 0 
+		const correctResponses = reactionTimes
+			.filter((rt, index) => rt.correct && index >= currentStimuli.length * 2) // Count only Levels 3 to 6
+			.length;
+		const totalTrials = reactionTimes.filter((_, index) => index >= currentStimuli.length * 2).length;
+		const avgReactionTime = totalTrials > 0
 			? (
-				reactionTimes.reduce((acc, curr) => acc + curr.reactionTime, 0) / totalTrials
-				).toFixed(2)
-			: "0.00"; // default to "0.00" if no trials
-
-			console.log("Average Reaction Time:", avgReactionTime); // for debugging
-        const avgFemaleScience = avgReactionTimeForPair("Female", "Science");
-        const avgMaleScience = avgReactionTimeForPair("Male", "Science");
-        const avgFemaleArts = avgReactionTimeForPair("Female", "Liberal Arts");
-        const avgMaleArts = avgReactionTimeForPair("Male", "Liberal Arts");		
-
+				reactionTimes
+					.slice(currentStimuli.length * 2) // Use only Levels 3 to 6
+					.reduce((acc, curr) => acc + curr.reactionTime, 0) / totalTrials
+			  ).toFixed(2)
+			: "0.00";
+	
+		const avgFemaleScience = avgReactionTimeForPair("Female", "Science");
+		const avgMaleScience = avgReactionTimeForPair("Male", "Science");
+		const avgFemaleArts = avgReactionTimeForPair("Female", "Liberal Arts");
+		const avgMaleArts = avgReactionTimeForPair("Male", "Liberal Arts");
+	
 		return (
 			<div className="IAT-container">
 				<h2>Test Completed</h2>
-				<p>Total Trials: {totalTrials}</p>
-				<p>Correct Responses: {correctResponses}</p>
-				<p>Average Reaction Time: {avgReactionTime} ms</p>
+				<p>Total Trials (Levels 3-6): {totalTrials}</p>
+				<p>Correct Responses (Levels 3-6): {correctResponses}</p>
+				<p>Average Reaction Time (Levels 3-6): {avgReactionTime} ms</p>
 				<p>Average Reaction Time (Female-Science): {avgFemaleScience} ms</p>
 				<p>Average Reaction Time (Male-Science): {avgMaleScience} ms</p>
 				<p>Average Reaction Time (Female-Arts): {avgFemaleArts} ms</p>
 				<p>Average Reaction Time (Male-Arts): {avgMaleArts} ms</p>
-
+	
 				<h3>Interpretation:</h3>
 				<p>{avgFemaleScience < avgMaleScience ? "Participant shows a stronger association between females and science." : "Participant shows a stronger association between males and science."}</p>
 				<p>{avgFemaleArts < avgMaleArts ? "Participant shows a stronger association between females and arts." : "Participant shows a stronger association between males and arts."}</p>
 			</div>
 		);
 	}
+	
 
 
 	// Ready screen between levels
@@ -337,8 +343,8 @@ const IATTest = () => {
 		if (level === 0) nextTask = "Science vs Liberal Arts categories";
 		if (level === 1) nextTask = "Male vs Female categories";
 		if (level === 2) nextTask = "Male and Liberal Art vs Female and Science";
-		if (level === 3) nextTask = "Male and Science vs Female and Liberal Arts";
-		if (level === 4) nextTask = "Female and Science vs Male and Liberal Arts";
+		if (level === 3) nextTask = "Female and Science vs Male and Liberal Arts";
+		if (level === 4) nextTask = "Male and Science vs Female and Liberal Arts";
 		if (level === 5) nextTask = "Female and Liberal Art vs Male and Science";
 
 		return (
@@ -394,8 +400,8 @@ const IATTest = () => {
 					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : //pratice subjects 
 						level === 2 ? <h2>Male</h2> : // example male vs female
 						level === 3 ? <h2> Male</h2> : // Male and Art 
-						level === 4 ? <h2>Male </h2> : // Female Science 
-						level === 5 ? <h2>Female</h2> : // Male and Science
+						level === 4 ? <h2>Female </h2> : // Female Science 
+						level === 5 ? <h2>Male</h2> : // Male and Science
 						<h2>Female</h2> // Female and Arts 
 					}
 					{level === 3 && <h3>Liberal Arts</h3>}
