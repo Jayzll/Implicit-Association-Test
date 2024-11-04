@@ -117,6 +117,7 @@ const IATTest = () => {
 	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
 	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
 	const [startTime, setStartTime] = React.useState<number | null>(null); // New state for start time
+	const [levelTrialCount, setLevelTrialCount] = React.useState(0);
 
 	// Conditionally set stimuli based on the current level or practice mode
 	const currentStimuli: Stimulus[] = React.useMemo(() => {
@@ -133,28 +134,34 @@ const IATTest = () => {
 
 	const handleNextTrial = React.useCallback(
 		(userResponse = false) => {
-			if (level > 3) {
+			console.log(`Current level: ${level}`);
+			console.log(`Current trial: ${trial}`);
+			if (level > 6) {
 				return;
 			}
+			
 			if (!userResponse) {
-                setReactionTimes([
-                    ...reactionTimes,
-                    { reactionTime: 0, correct: false, category: stimulus.category },
-                ]);
-            }
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime: 0, correct: false, category: stimulus.category },
+				]);
+			}
+	
 			if (trial + 1 < currentStimuli.length) {
 				setTrial(trial + 1); // Move to the next trial
-				setStartTime(performance.now()); 
+				setStartTime(performance.now());
 			} else {
 				if (isPractice) {
 					// After practice, start level 1
 					setIsPractice(false);
 					setShowReadyScreen(true);
-					setLevel(0);
+					setLevel(1); // Corrected this to 1
 					setTrial(0); // Reset trials for the new level
-				} else if (level < 3) {
+				} else if (level < 6) {
 					// Move to next level after current level ends
 					setShowReadyScreen(true);
+					setLevel(level + 1); // Move to the next level
+					setTrial(0); // Reset trial count for the new level
 				} else {
 					setLevel(level + 1); // Proceed to the result screen
 				}
@@ -162,6 +169,7 @@ const IATTest = () => {
 		},
 		[currentStimuli, isPractice, level, trial, reactionTimes],
 	);
+	
 	const stimulus = currentStimuli[trial];
 
 	useInterval(
@@ -214,16 +222,17 @@ const IATTest = () => {
 				expectedKey = 
 					(stimulus.category === "Liberal Arts" || stimulus.category === "Male") ? "e" : "i";
 			} else if (level === 4) {
-				// Level 4: Male and Science ('e') vs Female and Liberal Arts ('i')
-				expectedKey =
-					(stimulus.category === "Male" || stimulus.category === "Science") ? "e" : "i";
-			} else if (level === 5) {
-				// Level 5: Female and Science ('e') vs Male and Liberal Arts ('i')
+				// Level 4: Female and Science vs Male Art 
 				expectedKey =
 					(stimulus.category === "Female" || stimulus.category === "Science") ? "e" : "i";
+			} else if (level === 5) {
+				// Level 5: Male and Science vs Female Art
+				expectedKey =
+					(stimulus.category === "Male" || stimulus.category === "Science") ? "e" : "i";
 			} else if (level === 6) {
-				// Level 6: Back to a basic task if needed or any final condition
-				expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i"; // Example condition
+				// Level 6: Female and Art vs Male and Science 
+				expectedKey = 
+					(stimulus.category === "Female" || stimulus.category === "Art") ? "e" : "i";
 			}
 
 			const correct = keyPressed === expectedKey;
@@ -321,10 +330,10 @@ const IATTest = () => {
 		let nextTask = "";
 		if (level === 0) nextTask = "Science vs Liberal Arts categories";
 		if (level === 1) nextTask = "Male vs Female categories";
-		if (level === 2) nextTask = "Combined Male/Female with Science/Liberal Arts";
+		if (level === 2) nextTask = "Male and Liberal Art vs Female and Science";
 		if (level === 3) nextTask = "Male and Science vs Female and Liberal Arts";
 		if (level === 4) nextTask = "Female and Science vs Male and Liberal Arts";
-		if (level === 5) nextTask = "Basic Science vs Liberal Arts Task";
+		if (level === 5) nextTask = "Female and Liberal Art vs Male and Science";
 
 		return (
 			<div className="IAT-container">
@@ -376,17 +385,17 @@ const IATTest = () => {
 			<div className="categories-stimulus-row">
 				{/* Left categories */}
 				<div className="category-left">
-					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : 
-						level === 2 ? <h2>Male</h2> :
-						level === 3 ? <h2> Male</h2> :
-						level === 4 ? <h2>Male </h2> : 
-						level === 5 ? <h2>Female</h2> :
-						<h2>Female</h2> 
+					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : //pratice subjects 
+						level === 2 ? <h2>Male</h2> : // example male vs female
+						level === 3 ? <h2> Male</h2> : // Male and Art 
+						level === 4 ? <h2>Male </h2> : // Female Science 
+						level === 5 ? <h2>Female</h2> : // Male and Science
+						<h2>Female</h2> // Female and Arts 
 					}
-					{level === 3 && <h3>Science</h3>}
-					{level === 4 && <h3>Art</h3>}
-					{level === 5 && <h3>Art</h3>}
-					{level === 6 && <h3>Science</h3>}
+					{level === 3 && <h3>Liberal Arts</h3>}
+					{level === 4 && <h3>Science</h3>}
+					{level === 5 && <h3>Science</h3>}
+					{level === 6 && <h3>Liberal Arts</h3>}
 				</div>
 
 				{/* Central stimulus */}
@@ -396,17 +405,17 @@ const IATTest = () => {
 
 				{/* Right categories */}
 				<div className="category-right">
-					{isPractice || level === 1 ? <h2>Science</h2> : 
-					level === 2 ? <h2>Female</h2> :
-					level === 3 ? <h2>Female</h2> :
-					level === 4 ? <h2>Female</h2> :
-					level === 5 ? <h2>Male</h2> :
-					<h2>Male</h2>
+					{isPractice || level === 1 ? <h2>Science</h2> : //pratice subjects 
+					level === 2 ? <h2>Female</h2> : // example male vs female
+					level === 3 ? <h2>Female</h2> : // Female and Science
+					level === 4 ? <h2>Male</h2> : // Male and Art
+					level === 5 ? <h2>Female</h2> : // Female and Art
+					<h2>Male</h2> // Male and Science 
 					}
-					{level === 3 && <h3>Liberal Art</h3>}
-					{level === 4 && <h3>Science</h3>}
-					{level === 5 && <h3>Science</h3>}
-					{level === 6 && <h3>Liberal Arts</h3>}
+					{level === 3 && <h3>Science</h3>}
+					{level === 4 && <h3>Liberal Art</h3>}
+					{level === 5 && <h3>Liberal Art</h3>}
+					{level === 6 && <h3>Science</h3>}
 				</div>
 			</div>
 
