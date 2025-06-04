@@ -11,277 +11,314 @@ const genderWords: Stimulus[] = [
   { word: "Girl", category: "Female" },
 ];
 
-const scienceWords: Stimulus[] = [
-  { word: "Physics", category: "Science" },
-  { word: "Chemistry", category: "Science" },
-  { word: "Biology", category: "Science" },
-  { word: "Math", category: "Science" },
+// Level 1: Science vs Liberal Arts
+// Level 1: Science vs Liberal Arts
+const level1Stimuli = [
+    { word: "Anthropology", category: "Liberal Arts" },
+    { word: "Astrophysics", category: "Science" },
+    { word: "Philosophy", category: "Liberal Arts" },
+    { word: "Biology", category: "Science" },
+    { word: "Psychology", category: "Science" },
+    { word: "Chemistry", category: "Science" },
+    { word: "Sociology", category: "Liberal Arts" },
+    { word: "Physics", category: "Science" },
+    { word: "Political Science", category: "Liberal Arts" },
+    { word: "Genetics", category: "Science" },
+    { word: "History", category: "Liberal Arts" },
+    { word: "Geology", category: "Science" },
+    { word: "Literature", category: "Liberal Arts" },
+    { word: "Neuroscience", category: "Science" },
+    { word: "Linguistics", category: "Liberal Arts" },
+    { word: "Ecology", category: "Science" }
 ];
 
-const artsWords: Stimulus[] = [
-  { word: "Literature", category: "Arts" },
-  { word: "History", category: "Arts" },
-  { word: "Music", category: "Arts" },
-  { word: "Poetry", category: "Arts" },
+
+// Level 2: Male vs Female
+const level2Stimuli = [
+	{ word: "Dad", category: "Male" },
+	{ word: "Mom", category: "Female" },
+	{ word: "Brother", category: "Male" },
+	{ word: "Sister", category: "Female" },
+	{ word: "Grandpa", category: "Male"},
+	{ word: "Grandma", category: "Female" },
+	{ word: "Uncle", category: "Male"},
+	{ word: "Auntie", category: "Female" },
 ];
 
-const allWords: Stimulus[] = [...genderWords, ...scienceWords, ...artsWords];
-
-const levels = [
-  {
-    label: "Practice Gender",
-    keys: { Male: "e", Female: "i" },
-  },
-  {
-    label: "Practice Science vs Arts",
-    keys: { Science: "e", Arts: "i" },
-  },
-  {
-    label: "Combined: Female + Science vs Male + Arts",
-    keys: { Female: "e", Science: "e", Male: "i", Arts: "i" },
-  },
-  {
-    label: "Combined: Male + Science vs Female + Arts",
-    keys: { Male: "e", Science: "e", Female: "i", Arts: "i" },
-  },
-  {
-    label: "Combined: Male + Arts vs Female + Science",
-    keys: { Male: "e", Arts: "e", Female: "i", Science: "i" },
-  },
-  {
-    label: "Combined: Female + Arts vs Male + Science",
-    keys: { Female: "e", Arts: "e", Male: "i", Science: "i" },
-  },
+// Level 3: Combined Male/Female + Science/Liberal Arts
+const combinedStimuli = [
+	{ word: "Anthropology", category: "Liberal Arts" },
+    { word: "Astrophysics", category: "Science" },
+    { word: "Philosophy", category: "Liberal Arts" },
+    { word: "Biology", category: "Science" },
+    { word: "Psychology", category: "Science" },
+    { word: "Chemistry", category: "Science" },
+    { word: "Sociology", category: "Liberal Arts" },
+    { word: "Physics", category: "Science" },
+    { word: "Political Science", category: "Liberal Arts" },
+    { word: "Genetics", category: "Science" },
+    { word: "History", category: "Liberal Arts" },
+    { word: "Geology", category: "Science" },
+    { word: "Literature", category: "Liberal Arts" },
+    { word: "Neuroscience", category: "Science" },
+    { word: "Linguistics", category: "Liberal Arts" },
+    { word: "Ecology", category: "Science" },
+	{ word: "Dad", category: "Male" },
+	{ word: "Mom", category: "Female" },
+	{ word: "Brother", category: "Male" },
+	{ word: "Sister", category: "Female" },
+	{ word: "Grandpa", category: "Male"},
+	{ word: "Grandma", category: "Female" },
+	{ word: "Uncle", category: "Male"},
+	{ word: "Auntie", category: "Female" },
 ];
 
-const practiceLevels = [0, 1];
-const trials_per_level = 10;
+// Shuffle function using Fisher-Yates algorithm
+const shuffleArray = (array: Stimulus[]) => {
+	const shuffledArray = [...array];
+	for (let i = shuffledArray.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[shuffledArray[i], shuffledArray[j]] = [shuffledArray[j], shuffledArray[i]];
+	}
+	return shuffledArray;
+};
 
-export default function IATPage() {
-  const [showIntro, setShowIntro] = useState(true);
-  const [trialCount, setTrialCount] = useState(0);
-  const [showInstruction, setShowInstruction] = useState(true);
-  const [level, setLevel] = useState(0);
-  const [stimulus, setStimulus] = useState<Stimulus | null>(null);
-  const [reactionTimes, setReactionTimes] = useState<
-    { category: Category; correct: boolean; reactionTime: number; level: number }[]
-  >([]);
+const IATTest = () => {
+	const [trial, setTrial] = React.useState(0);
+	const [reactionTimes, setReactionTimes] = React.useState<ReactionTime[]>([]);
+	const [level, setLevel] = React.useState(1); // Track the current level
+	const [showInstructions, setShowInstructions] = React.useState(true); // Instructions for each level
+	const [isPractice, setIsPractice] = React.useState(true); // Track if in practice round
+	const [showReadyScreen, setShowReadyScreen] = React.useState(false); // Ready screen between levels
+	const [timeLeft, setTimeLeft] = React.useState(3); // Timer state for 3 seconds
+	const [startTime, setStartTime] = React.useState<number | null>(null); // New state for start time
 
-  // Store reaction times separately for the 4 groups
-  const [rtGroups, setRtGroups] = useState<{
-    femaleScience: number[];
-    femaleArts: number[];
-    maleScience: number[];
-    maleArts: number[];
-  }>({
-    femaleScience: [],
-    femaleArts: [],
-    maleScience: [],
-    maleArts: [],
-  });
+	// Conditionally set stimuli based on the current level or practice mode
+	const currentStimuli: Stimulus[] = React.useMemo(() => {
+		return shuffleArray(
+			isPractice
+				? practiceStimuli
+				: level === 1
+					? level1Stimuli
+					: level === 2
+						? level2Stimuli
+						: combinedStimuli,
+		);
+	}, [isPractice, level]);
 
-  const [startTime, setStartTime] = useState<number>(Date.now());
+	const handleNextTrial = React.useCallback(
+		(userResponse = false) => {
+			if (level > 3) {
+				return;
+			}
+			if (!userResponse) {
+                setReactionTimes([
+                    ...reactionTimes,
+                    { reactionTime: 0, correct: false, category: stimulus.category },
+                ]);
+            }
+			if (trial + 1 < currentStimuli.length) {
+				setTrial(trial + 1); // Move to the next trial
+				setStartTime(performance.now()); 
+			} else {
+				if (isPractice) {
+					// After practice, start level 1
+					setIsPractice(false);
+					setShowReadyScreen(true);
+					setLevel(0);
+					setTrial(0); // Reset trials for the new level
+				} else if (level < 3) {
+					// Move to next level after current level ends
+					setShowReadyScreen(true);
+				} else {
+					setLevel(level + 1); // Proceed to the result screen
+				}
+			}
+		},
+		[currentStimuli, isPractice, level, trial, reactionTimes],
+	);
+	const stimulus = currentStimuli[trial];
 
-  // Select words per level
-  function getWordForLevel(level: number): Stimulus {
-    switch (level) {
-      case 0:
-        return genderWords[Math.floor(Math.random() * genderWords.length)];
-      case 1:
-        return [...scienceWords, ...artsWords][
-          Math.floor(Math.random() * (scienceWords.length + artsWords.length))
-        ];
-      default:
-        return allWords[Math.floor(Math.random() * allWords.length)];
-    }
-  }
+	useInterval(
+		() => {
+			if (level <=6 && trial < currentStimuli.length) {
+				setTimeLeft((prev) => {
+					if (prev <= 0) {
+						return 0; // Prevent negative value
+					}
+					return prev - 0.1; // Decrease time left by 0.1 seconds
+				});
 
-  // Advance trial or level, show stimulus, track reaction times
-  useEffect(() => {
-    if (showIntro) return;
-    if (level < levels.length && !showInstruction) {
-      if (trialCount === 0) {
-        // New level start - pick first stimulus
-        const word = getWordForLevel(level);
-        setStimulus(word);
-        setStartTime(Date.now());
-      }
-    }
-  }, [level, showInstruction, trialCount]);
+				if (timeLeft <= 0) {
+					handleNextTrial(false);
+					setTimeLeft(3);
+				}	
+			}
+		},
+		!isPractice && trial < currentStimuli.length && level <= 6 ? 100 : null,
+	);
 
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (showInstruction || !stimulus || level >= levels.length) return;
+	React.useEffect(() => {
+		const handleResponse = (e: KeyboardEvent) => {
+			if (level > 6 || !stimulus || trial >= currentStimuli.length) return;
 
-      const currentLevel = levels[level];
-      const correctKey = currentLevel.keys[stimulus.category];
-      const keyPressed = e.key.toLowerCase();
-      const reactionTime = Date.now() - startTime;
-      const correct = keyPressed === correctKey;
+			const keyPressed = e.key.toLowerCase();
 
-      // Store global reaction times
-      setReactionTimes((prev) => [
-        ...prev,
-        { category: stimulus.category, correct, reactionTime, level },
-      ]);
+			if (keyPressed !== "e" && keyPressed !== "i") {
+				return;
+			}
 
-      // Update rtGroups if correct and not practice level
-      if (correct && !practiceLevels.includes(level)) {
-        // Determine group for this trial
-        let groupKey: keyof typeof rtGroups | null = null;
+			const endTime = performance.now();
+			const reactionTime = startTime ? endTime - startTime : 0;
 
-        // Figure out which category the stimulus belongs to and key assignment,
-        // then classify into one of four groups:
-        // Female+Science, Female+Arts, Male+Science, Male+Arts
+			let expectedKey = "";
+			if (isPractice) {
+				// Practice: Liberal Arts ('e') vs Science ('i'), Male ('e') vs Female ('i')
+				expectedKey =
+					stimulus.category === "Liberal Arts" || stimulus.category === "Male"
+						? "e"
+						: "i";
+			} else if (level === 1) {
+				// Level 1: Liberal Arts ('e') vs Science ('i')
+				expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i";
+			} else if (level === 2) {
+				// Level 2: Male ('e') vs Female ('i')
+				expectedKey = stimulus.category === "Male" ? "e" : "i";
+			} else if (level === 3) {
+				// Level 3: Combined task (e.g., Liberal Arts and Male vs Science and Female)
+				expectedKey = 
+					(stimulus.category === "Liberal Arts" || stimulus.category === "Male") ? "e" : "i";
+			} else if (level === 4) {
+				// Level 4: Male and Science ('e') vs Female and Liberal Arts ('i')
+				expectedKey =
+					(stimulus.category === "Male" || stimulus.category === "Science") ? "e" : "i";
+			} else if (level === 5) {
+				// Level 5: Female and Science ('e') vs Male and Liberal Arts ('i')
+				expectedKey =
+					(stimulus.category === "Female" || stimulus.category === "Science") ? "e" : "i";
+			} else if (level === 6) {
+				// Level 6: Back to a basic task if needed or any final condition
+				expectedKey = stimulus.category === "Liberal Arts" ? "e" : "i"; // Example condition
+			}
 
-        const leftKeyCats = Object.entries(currentLevel.keys)
-          .filter(([, k]) => k === "e")
-          .map(([cat]) => cat as Category);
-        const rightKeyCats = Object.entries(currentLevel.keys)
-          .filter(([, k]) => k === "i")
-          .map(([cat]) => cat as Category);
+			const correct = keyPressed === expectedKey;
+			// Only allow moving to the next trial if the response is correct
+			if (correct) {
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime, correct, category: stimulus.category },
+				]);
+				setTimeLeft(3); // Reset timer for next trial
+				handleNextTrial(true); // Move to the next trial
+			} else {
+				// Show an error if the response is incorrect
+				setReactionTimes([
+					...reactionTimes,
+					{ reactionTime, correct: false, category: stimulus.category },
+				]);
+				// You can also add an error state to show a red 'X' or other error indicator
+			}
+		};
+		window.addEventListener("keydown", handleResponse);
+		return () => {
+			window.removeEventListener("keydown", handleResponse);
+		};
+	}, [
+		trial,
+		stimulus,
+		isPractice,
+		currentStimuli.length,
+		handleNextTrial,
+		level,
+		reactionTimes,
+		startTime,
+	]);
 
-        // Check which side the stimulus category belongs to
-        const onLeft = leftKeyCats.includes(stimulus.category);
-        const onRight = rightKeyCats.includes(stimulus.category);
+	const startNextLevel = () => {
+		setLevel(level + 1);
+		setTrial(0); // Reset trials for the new level
+		setTimeLeft(3);
+		setShowReadyScreen(false); // Hide the ready screen
+	};
 
-        // Now classify into 4 groups:
-        // We need to know the pairings for this level, so let's get all categories present
-        // And map the stimulus to male/female and science/arts as needed.
+	const avgReactionTimeForPair = (category1: string, category2: string) => {
+		const times = reactionTimes
+			.filter((rt) =>
+				rt.correct &&
+				(rt.category === category1 || rt.category === category2) // Match categories
+			)
+			.map((rt) => rt.reactionTime);
+	
+		return times.length > 0
+			? (times.reduce((acc, time) => acc + time, 0) / times.length).toFixed(2)
+			: "0.00";
+	};
+	
 
-        // Assign the "gender" and "domain" for the stimulus:
-        const gender = stimulus.category === "Male" || stimulus.category === "Female" ? stimulus.category : null;
-        const domain = stimulus.category === "Science" || stimulus.category === "Arts" ? stimulus.category : null;
 
-        // But in combined levels, sometimes stimulus category is one of 4.
-        // So to identify the pair, we must see which categories are on left and right keys.
+	// Final results after all levels
+	if (level > 6) {
+		const correctResponses = reactionTimes.filter((rt) => rt.correct).length;
+		const totalTrials = reactionTimes.length;
+		const avgReactionTime = totalTrials > 0 
+			? (
+				reactionTimes.reduce((acc, curr) => acc + curr.reactionTime, 0) / totalTrials
+				).toFixed(2)
+			: "0.00"; // default to "0.00" if no trials
 
-        // Check if "Female" and "Science" are both on left or right
-        // We'll check the key assignments for each category
+			console.log("Average Reaction Time:", avgReactionTime); // for debugging
+        const avgFemaleScience = avgReactionTimeForPair("Female", "Science");
+        const avgMaleScience = avgReactionTimeForPair("Male", "Science");
+        const avgFemaleArts = avgReactionTimeForPair("Female", "Liberal Arts");
+        const avgMaleArts = avgReactionTimeForPair("Male", "Liberal Arts");		
 
-        // We'll find the pairings for the sides to identify which group this trial belongs to:
+		return (
+			<div className="IAT-container">
+				<h2>Test Completed</h2>
+				<p>Total Trials: {totalTrials}</p>
+				<p>Correct Responses: {correctResponses}</p>
+				<p>Average Reaction Time: {avgReactionTime} ms</p>
+				<p>Average Reaction Time (Female-Science): {avgFemaleScience} ms</p>
+				<p>Average Reaction Time (Male-Science): {avgMaleScience} ms</p>
+				<p>Average Reaction Time (Female-Arts): {avgFemaleArts} ms</p>
+				<p>Average Reaction Time (Male-Arts): {avgMaleArts} ms</p>
 
-        // The four groups:
-        // femaleScience: Female and Science categories assigned to same key ("e" or "i")
-        // femaleArts: Female and Arts assigned to same key
-        // maleScience: Male and Science assigned to same key
-        // maleArts: Male and Arts assigned to same key
+				<h3>Interpretation:</h3>
+				<p>{avgFemaleScience < avgMaleScience ? "Participant shows a stronger association between females and science." : "Participant shows a stronger association between males and science."}</p>
+				<p>{avgFemaleArts < avgMaleArts ? "Participant shows a stronger association between females and arts." : "Participant shows a stronger association between males and arts."}</p>
+			</div>
+		);
+	}
 
-        // Determine which key side is Female assigned to
-        const femaleKey = currentLevel.keys["Female"];
-        const maleKey = currentLevel.keys["Male"];
-        const scienceKey = currentLevel.keys["Science"];
-        const artsKey = currentLevel.keys["Arts"];
 
-        // Now check combinations
-        // Example: if femaleKey === scienceKey, then Female+Science is one group assigned to that key
-        // and maleKey === artsKey forms Male+Arts group on the other key.
+	// Ready screen between levels
+	if (showReadyScreen) {
+		let nextTask = "";
+		if (level === 0) nextTask = "Science vs Liberal Arts categories";
+		if (level === 1) nextTask = "Male vs Female categories";
+		if (level === 2) nextTask = "Combined Male/Female with Science/Liberal Arts";
+		if (level === 3) nextTask = "Male and Science vs Female and Liberal Arts";
+		if (level === 4) nextTask = "Female and Science vs Male and Liberal Arts";
+		if (level === 5) nextTask = "Basic Science vs Liberal Arts Task";
 
-        if (
-          femaleKey === scienceKey &&
-          ((stimulus.category === "Female" || stimulus.category === "Science") && correctKey === femaleKey)
-        ) {
-          groupKey = "femaleScience";
-        } else if (
-          femaleKey === artsKey &&
-          ((stimulus.category === "Female" || stimulus.category === "Arts") && correctKey === femaleKey)
-        ) {
-          groupKey = "femaleArts";
-        } else if (
-          maleKey === scienceKey &&
-          ((stimulus.category === "Male" || stimulus.category === "Science") && correctKey === maleKey)
-        ) {
-          groupKey = "maleScience";
-        } else if (
-          maleKey === artsKey &&
-          ((stimulus.category === "Male" || stimulus.category === "Arts") && correctKey === maleKey)
-        ) {
-          groupKey = "maleArts";
-        }
+		return (
+			<div className="IAT-container">
+				<h2>Get Ready for the Next Level</h2>
+				<p>
+					In the next level, you will sort <strong>{nextTask}</strong>.
+				</p>
+				<button type="button" onClick={startNextLevel}>
+					Start Next Level
+				</button>
+			</div>
+		);
+	}
 
-        if (groupKey) {
-          setRtGroups((prev) => ({
-            ...prev,
-            [groupKey]: [...prev[groupKey], reactionTime],
-          }));
-        }
-      }
-
-      // Proceed to next trial or level
-      if (trialCount + 1 >= trials_per_level) {
-        setLevel((prev) => prev + 1);
-        setShowInstruction(true);
-        setTrialCount(0);
-      } else {
-        setTrialCount((prev) => prev + 1);
-        const word = getWordForLevel(level);
-        setStimulus(word);
-        setStartTime(Date.now());
-      }
-    };
-
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [stimulus, level, startTime, trialCount, showInstruction]);
-
-  // Calculate averages helper
-  const avg = (arr: number[]) => (arr.length === 0 ? 0 : arr.reduce((a, b) => a + b, 0) / arr.length);
-
-  // Calculate final results when finished
-  const finished = level >= levels.length;
-
-  // Average RTs per group
-  const avgFemaleScienceRT = avg(rtGroups.femaleScience);
-  const avgFemaleArtsRT = avg(rtGroups.femaleArts);
-  const avgMaleScienceRT = avg(rtGroups.maleScience);
-  const avgMaleArtsRT = avg(rtGroups.maleArts);
-
-  // Overall average reaction time for correct responses (all levels except practice)
-  const allRTs = reactionTimes.filter((rt) => rt.correct && !practiceLevels.includes(rt.level)).map((rt) => rt.reactionTime);
-  const overallAvgRT = avg(allRTs);
-
-  // Calculate pooled std deviation for D-score
-  const pooledStdDev = Math.sqrt(
-    allRTs.reduce((sum, rt) => sum + Math.pow(rt - overallAvgRT, 2), 0) / (allRTs.length || 1)
-  );
-
-  // D-score calculation for Female vs Male on Science (you can tweak which groups to compare)
-  // Let's define: femaleAvg = average of Female+Science and Female+Arts, maleAvg = average of Male+Science and Male+Arts
-  const femaleAvgRT = avg([...rtGroups.femaleScience, ...rtGroups.femaleArts]);
-  const maleAvgRT = avg([...rtGroups.maleScience, ...rtGroups.maleArts]);
-  const dScore = pooledStdDev ? ((maleAvgRT - femaleAvgRT) / pooledStdDev).toFixed(2) : "0";
-
-  // Interpretation based on dScore
-  let biasInterpretation = "No clear implicit preference.";
-  const d = parseFloat(dScore);
-  if (d > 0.65) {
-    biasInterpretation = "Strong implicit association between males and science.";
-  } else if (d > 0.35) {
-    biasInterpretation = "Moderate implicit association between males and science.";
-  } else if (d > 0.15) {
-    biasInterpretation = "Slight implicit association between males and science.";
-  } else if (d < -0.65) {
-    biasInterpretation = "Strong implicit association between females and science.";
-  } else if (d < -0.35) {
-    biasInterpretation = "Moderate implicit association between females and science.";
-  } else if (d < -0.15) {
-    biasInterpretation = "Slight implicit association between females and science.";
-  }
-
-  // Find group with fastest average RT
-  const groupsRTs = [
-    { name: "Female + Science", avgRT: avgFemaleScienceRT },
-    { name: "Female + Arts", avgRT: avgFemaleArtsRT },
-    { name: "Male + Science", avgRT: avgMaleScienceRT },
-    { name: "Male + Arts", avgRT: avgMaleArtsRT },
-  ];
-  groupsRTs.sort((a, b) => a.avgRT - b.avgRT);
-  const fastestGroup = groupsRTs[0];
-
-  if (showIntro) {
-    return (
-      <div className="IAT-container">
-        <h2>HOW SEXIST ARE YOU</h2>
+	// Initial instructions for the first level
+	if (showInstructions) {
+		return (
+			<div className="IAT-container">
+				<h2>HOW SEXIST ARE YOU</h2>
 				<p>
 					{" "}
 					This is a Gender-Science Task. In this study you will
@@ -354,66 +391,60 @@ export default function IATPage() {
               </p>
             </div>
 
-            <div className="categories-stimulus-row">
-              <div className="category-left">
-                <h2>
-                  {Object.entries(levels[level].keys)
-                    .filter(([, key]) => key === "e")
-                    .map(([cat]) => cat)
-                    .join(" / ")}
-                </h2>
-              </div>
+			{/* Category and stimulus section */}
+			<div className="categories-stimulus-row">
+				{/* Left categories */}
+				<div className="category-left">
+					{isPractice || level === 1 ? <h2>Liberal Arts</h2> : 
+						level === 2 ? <h2>Male</h2> :
+						level === 3 ? <h2> Male</h2> :
+						level === 4 ? <h2>Male </h2> : 
+						level === 5 ? <h2>Female</h2> :
+						<h2>Female</h2> 
+					}
+					{level === 3 && <h3>Science</h3>}
+					{level === 4 && <h3>Art</h3>}
+					{level === 5 && <h3>Art</h3>}
+					{level === 6 && <h3>Science</h3>}
+				</div>
 
               <div className="stimulus">
                 <h3 style={{ fontSize: "3rem", marginTop: "2rem" }}>{stimulus?.word}</h3>
               </div>
 
-              <div className="category-right">
-                <h2>
-                  {Object.entries(levels[level].keys)
-                    .filter(([, key]) => key === "i")
-                    .map(([cat]) => cat)
-                    .join(" / ")}
-                </h2>
-              </div>
-            </div>
-          </>
-        )
-      ) : (
-        <>
-          <h2>Test Completed</h2>
-          <p>
-            <strong>Average Reaction Time (Female + Science):</strong>{" "}
-            {avgFemaleScienceRT.toFixed(2)} ms
-          </p>
-          <p>
-            <strong>Average Reaction Time (Female + Arts):</strong>{" "}
-            {avgFemaleArtsRT.toFixed(2)} ms
-          </p>
-          <p>
-            <strong>Average Reaction Time (Male + Science):</strong>{" "}
-            {avgMaleScienceRT.toFixed(2)} ms
-          </p>
-          <p>
-            <strong>Average Reaction Time (Male + Arts):</strong>{" "}
-            {avgMaleArtsRT.toFixed(2)} ms
-          </p>
-          <p>
-            <strong>Overall Average Reaction Time:</strong> {overallAvgRT.toFixed(2)} ms
-          </p>
-          <p>
-            <strong>IAT D-Score:</strong> {dScore}
-          </p>
-          <p style={{ color: d > 0.15 ? "blue" : d < -0.15 ? "green" : "gray" }}>
-            <strong>Interpretation:</strong> {biasInterpretation}
-          </p>
-          <p>
-            <strong>Fastest Average RT Group (Implicit Association):</strong> {fastestGroup.name} (
-            {fastestGroup.avgRT.toFixed(2)} ms)
-          </p>
-          <button onClick={() => window.location.reload()}>Try Again</button>
-        </>
-      )}
-    </div>
-  );
-}
+				{/* Right categories */}
+				<div className="category-right">
+					{isPractice || level === 1 ? <h2>Science</h2> : 
+					level === 2 ? <h2>Female</h2> :
+					level === 3 ? <h2>Female</h2> :
+					level === 4 ? <h2>Female</h2> :
+					level === 5 ? <h2>Male</h2> :
+					<h2>Male</h2>
+					}
+					{level === 3 && <h3>Liberal Art</h3>}
+					{level === 4 && <h3>Science</h3>}
+					{level === 5 && <h3>Science</h3>}
+					{level === 6 && <h3>Liberal Arts</h3>}
+				</div>
+			</div>
+
+			{/* Bottom instructions */}
+			<div className="error-instructions">
+				<p>
+					If you make a mistake, a <span className="error-text">red X</span>{" "}
+					will appear. Press the other key to continue.
+				</p>
+			</div>
+
+			{/* Timer Bar (hidden during practice) */}
+			{!isPractice && (
+				<div className="timer-bar">
+					<div
+						className="timer-fill"
+						style={{ width: `${(timeLeft / 3) * 100}%` }} // Set width based on time left
+					/>
+				</div>
+			)}
+		</div>
+	);
+};
