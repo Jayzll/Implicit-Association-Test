@@ -281,7 +281,7 @@ export default function IATPage() {
   if (showIntro) {
     return (
       <div className="IAT-container">
-        <h2>HOW SEXIST ARE YOU</h2>
+        <h2>Gender-Science Implicit Association Test</h2>
 				<p>
 					{" "}
 					This is a Gender-Science Task. In this study you will
@@ -291,10 +291,8 @@ export default function IATPage() {
 					receive your IAT result along with information about what it means.
 				</p>
 				<p>In this test, you will see words appear on the screen.</p>
-				<p>First, there will be a practice round with no timer.</p>
-				<p>In Level 1, you will sort Science and Liberal Arts categories</p>
-				<p>In Level 2, you will sort Male and Female categories.</p>
-				<p>In Level 3, you will sort combined categories.</p>
+				<p>First, there will be a practice round.</p>
+				<p>Then, you will sort combined categories.</p>
 
         <button onClick={() => setShowIntro(false)}>Start Test</button>
       </div>
@@ -303,7 +301,7 @@ export default function IATPage() {
 
   return (
     <div className="IAT-container">
-      <h1>Gender & Science IAT</h1>
+      <h1>Gender - Science IAT</h1>
 
       {level < levels.length ? (
         showInstruction ? (
@@ -383,6 +381,7 @@ export default function IATPage() {
       ) : (
         <>
           <h2>Test Completed</h2>
+          <h3>HOW SEXIST ARE YOU</h3>
           <p>
             <strong>Average Reaction Time (Female + Science):</strong>{" "}
             {avgFemaleScienceRT.toFixed(2)} ms
