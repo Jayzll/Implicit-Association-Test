@@ -247,26 +247,30 @@ export default function IATPage() {
 
   // D-score calculation for Female vs Male on Science (you can tweak which groups to compare)
   // Let's define: femaleAvg = average of Female+Science and Female+Arts, maleAvg = average of Male+Science and Male+Arts
-  const femaleAvgRT = avg([...rtGroups.femaleScience, ...rtGroups.femaleArts]);
-  const maleAvgRT = avg([...rtGroups.maleScience, ...rtGroups.maleArts]);
-  const dScore = pooledStdDev ? ((maleAvgRT - femaleAvgRT) / pooledStdDev).toFixed(2) : "0";
+  // const femaleAvgRT = avg([...rtGroups.femaleScience, ...rtGroups.maleScience]);
+  // const maleAvgRT = avg([...rtGroups.femaleArts, ...rtGroups.maleArts]);
+  // const dScore = pooledStdDev ? ((maleAvgRT - femaleAvgRT) / pooledStdDev).toFixed(2) : "0";
+  const dScore = pooledStdDev ? ((avgFemaleScienceRT - avgMaleScienceRT) / pooledStdDev).toFixed(2) : "0";
 
   // Interpretation based on dScore
   let biasInterpretation = "No clear implicit preference.";
   const d = parseFloat(dScore);
   if (d > 0.65) {
-    biasInterpretation = "Strong implicit association between males and science.";
-  } else if (d > 0.35) {
-    biasInterpretation = "Moderate implicit association between males and science.";
-  } else if (d > 0.15) {
-    biasInterpretation = "Slight implicit association between males and science.";
-  } else if (d < -0.65) {
     biasInterpretation = "Strong implicit association between females and science.";
-  } else if (d < -0.35) {
+  } else if (d > 0.35) {
     biasInterpretation = "Moderate implicit association between females and science.";
-  } else if (d < -0.15) {
+  } else if (d > 0.15) {
     biasInterpretation = "Slight implicit association between females and science.";
+  } else if (d < -0.65) {
+    biasInterpretation = "Strong implicit association between males and science.";
+  } else if (d < -0.35) {
+    biasInterpretation = "Moderate implicit association between males and science.";
+  } else if (d < -0.15) {
+    biasInterpretation = "Slight implicit association between males and science.";
+  } else {
+    biasInterpretation = "No clear implicit preference.";
   }
+
 
   // Find group with fastest average RT
   const groupsRTs = [
